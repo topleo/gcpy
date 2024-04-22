@@ -40,6 +40,8 @@ def compare_single_level(
         refstr,
         devdata,
         devstr,
+        ref_grid=None,
+        dev_grid=None,
         varlist=None,
         ilev=0,
         itime=0,
@@ -84,6 +86,8 @@ def compare_single_level(
             String description for development data to be used in plots
 
     Keyword Args (optional):
+        ref_grid/dev_grid: dict
+            Dictionary containing grid information for ref and dev datasets
         varlist: list of strings
             List of xarray dataset variable names to make plots for
             Default value: None (will compare all common variables)
@@ -272,6 +276,8 @@ def compare_single_level(
          refdata,
          devdata,
          weightsdir,
+         ref_grid=ref_grid,
+         dev_grid=dev_grid,
          cmpres=cmpres,
          sg_ref_params=sg_ref_params,
          sg_dev_params=sg_dev_params
@@ -525,7 +531,10 @@ def compare_single_level(
     frac_ds_ref_cmps = [None] * n_var
     frac_ds_dev_cmps = [None] * n_var
 
-    global_cmp_grid = call_make_grid(cmpres, cmpgridtype)[0]
+    if ref_grid is not None:
+        global_cmp_grid = cmpgrid
+    else:
+        global_cmp_grid = call_make_grid(cmpres, cmpgridtype)[0]
     # Get grid limited to cmp_extent for comparison datasets
     # Do not do this for cross-dateline plotting
     if cmp_extent[0] < cmp_extent[1]:
@@ -533,7 +542,10 @@ def compare_single_level(
     else:
         regional_cmp_extent = [-180, 180, -90, 90]
 
-    regional_cmp_grid = call_make_grid(cmpres, cmpgridtype,
+    if ref_grid is not None:
+        regional_cmp_grid = cmpgrid
+    else:
+        regional_cmp_grid = call_make_grid(cmpres, cmpgridtype,
                                        in_extent=[-180,180,-90,90],
                                        out_extent=regional_cmp_extent)[0]
 
