@@ -15,6 +15,8 @@ from gcpy.grid import make_grid_LL, make_grid_CS, make_grid_SG, \
 def make_regridder_L2L(
         llres_in,
         llres_out,
+        grid_in=None,
+        grid_out=None,
         weightsdir='.',
         reuse_weights=False,
         in_extent=[-180, 180, -90, 90],
@@ -49,9 +51,12 @@ def make_regridder_L2L(
         regridder: xESMF regridder
             regridder object between the two specified grids
     """
-
-    llgrid_in = make_grid_LL(llres_in, in_extent, out_extent)
-    llgrid_out = make_grid_LL(llres_out, out_extent)
+    if grid_in is not None and grid_out is not None:
+        llgrid_in = grid_in
+        llgrid_out = grid_out
+    else:
+        llgrid_in = make_grid_LL(llres_in, in_extent, out_extent)
+        llgrid_out = make_grid_LL(llres_out, out_extent)
     if in_extent == [-180, 180, -90,
                      90] and out_extent == [-180, 180, -90, 90]:
         weightsfile = os.path.join(
@@ -327,6 +332,8 @@ def create_regridders(
         refds,
         devds,
         weightsdir='.',
+        ref_grid=None,
+        dev_grid=None,
         reuse_weights=True,
         cmpres=None,
         zm=False,
@@ -345,6 +352,10 @@ def create_regridders(
             Output dataset
 
     Keyword Args (optional):
+        ref_grid/dev_grid: dict
+            Grid definition of a dataset
+            If not passed, will be created from refds/devds, 
+            asuming a regular grid.
         weightsdir: str
             Directory in which to create xESMF regridder NetCDF files
             Default value: '.'
@@ -471,14 +482,24 @@ def create_regridders(
     # ==================================================================
     # Make grids (ref, dev, and comparison)
     # ==================================================================
-    [refgrid, _] = call_make_grid(
-        refres, refgridtype, ref_extent, cmp_extent, sg_ref_params)
+    if ref_grid is not None and dev_grid is not None:
+        refgrid = ref_grid
+        refres = None
+        devgrid = dev_grid
+        devres = None
+        if len(ref_grid['lat']) > len(dev_grid['lat']):
+            cmpgrid = ref_grid
+        else:
+            cmpgrid = dev_grid
+    else:
+        [refgrid, _] = call_make_grid(
+            refres, refgridtype, ref_extent, cmp_extent, sg_ref_params)
+        
+        [devgrid, _] = call_make_grid(
+            devres, devgridtype, dev_extent, cmp_extent, sg_dev_params)
 
-    [devgrid, _] = call_make_grid(
-        devres, devgridtype, dev_extent, cmp_extent, sg_dev_params)
-
-    [cmpgrid, _] = call_make_grid(
-        cmpres, cmpgridtype, cmp_extent, cmp_extent, sg_cmp_params)
+        [cmpgrid, _] = call_make_grid(
+            cmpres, cmpgridtype, cmp_extent, cmp_extent, sg_cmp_params)
 
     # =================================================================
     # Make regridders, if applicable
@@ -500,6 +521,8 @@ def create_regridders(
                 refregridder = make_regridder_L2L(
                     refres,
                     cmpres,
+                    grid_in=refgrid,
+                    grid_out=cmpgrid,
                     weightsdir=weightsdir,
                     reuse_weights=reuse_weights,
                     in_extent=ref_extent)
@@ -532,6 +555,8 @@ def create_regridders(
                 devregridder = make_regridder_L2L(
                     devres,
                     cmpres,
+                    grid_in=devgrid,
+                    grid_out=cmpgrid,
                     weightsdir=weightsdir,
                     reuse_weights=reuse_weights,
                     in_extent=dev_extent)

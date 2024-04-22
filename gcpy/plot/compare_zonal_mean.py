@@ -68,6 +68,8 @@ def compare_zonal_mean(
         sg_dev_path='',
         ref_vert_params=None,
         dev_vert_params=None,
+        ref_grid=None,
+        dev_grid=None,
         **extra_plot_args
 ):
     """
@@ -337,6 +339,8 @@ def compare_zonal_mean(
         weightsdir=weightsdir,
         cmpres=cmpres,
         zm=True,
+        ref_grid=ref_grid,
+        dev_grid=dev_grid,
         sg_ref_params=sg_ref_params,
         sg_dev_params=sg_dev_params
     )
@@ -663,8 +667,12 @@ def compare_zonal_mean(
             frac_ds_ref_cmps[i] = frac_ds_ref
             frac_ds_dev_cmps[i] = frac_ds_dev
     # Universal plot setup
-    xtick_positions = np.arange(-90, 91, 30)
-    xticklabels = [rf"{x}$\degree$" for x in xtick_positions]
+    if ref_grid is None:
+        xtick_positions = np.arange(-90, 91, 30)
+        xticklabels = [rf"{x}$\degree$" for x in xtick_positions]
+    else:
+        xtick_positions = np.arange(ref_grid['lat_b'][0], ref_grid['lat_b'][-1], 10).astype(int)
+        xticklabels = [rf"{x}$\degree$" for x in xtick_positions]
 
     # ==================================================================
     # Define function to create a single page figure to be called
